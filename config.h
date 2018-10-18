@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <vector>
 #include <iostream>
+#include <QDebug>
 
 class CONFIGSHARED_EXPORT Config
 {

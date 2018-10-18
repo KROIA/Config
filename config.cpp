@@ -31,7 +31,8 @@ void Config::read()
     _file = fopen(_filename.c_str(),"r");
     if(!_file)
     {
-        throw std::runtime_error("Config::read() Unknown file \""+_filename+"\"");
+        //throw std::string("Config::read() Unknown file \""+_filename+"\"");
+        qDebug() << "Config::read() Unknown file \""<<QString::fromStdString(_filename)<<"\"";
     }
     else
     {
@@ -86,7 +87,7 @@ void Config::save()
     _file = fopen(_filename.c_str(),"w");
     if(!_file)
     {
-        throw std::runtime_error("Config::save() Can't open file \""+_filename+"\"");
+       // throw std::runtime_error("Config::save() Can't open file \""+_filename+"\"");
     }
     else
     {
@@ -137,7 +138,7 @@ void Config::parameter(std::string parameterName, std::string &parameter, std::s
 {
     if(mode != "r" || mode != "w" || mode != "rw" || mode != "wr")
     {
-        throw std::runtime_error("Config::parameter("+parameterName+","+parameter+","+mode+") Error: unknown mode: "+mode+" Correct modes are: \"r\" , \"w\" , \"rw\" , \"wr\"");
+     //   throw std::runtime_error("Config::parameter("+parameterName+","+parameter+","+mode+") Error: unknown mode: "+mode+" Correct modes are: \"r\" , \"w\" , \"rw\" , \"wr\"");
     }
     int paramIndex = parameterindex(parameterName);
     if(paramIndex != -1)
@@ -167,7 +168,7 @@ std::string Config::line(unsigned int line)
 {
     if(_textList.size() <= line)
     {
-        throw std::runtime_error("Config::line("+std::to_string(line)+") parameter 0 is out of range! command ignored. Maximum is "+std::to_string(_textList.size()-1));
+       // throw std::runtime_error("Config::line("+std::to_string(line)+") parameter 0 is out of range! command ignored. Maximum is "+std::to_string(_textList.size()-1));
     }
     else
     {
@@ -207,7 +208,16 @@ int Config::getParamRow(std::string paramName)
     int row = -1;
     for(unsigned int a=0; a<_textList.size(); a++)
     {
-        if(_textList[a].find(paramName) == 0 && _textList[a].find("#") == -1 && _textList[a].find("//") == -1)
+        std::string line = _textList[a];
+        if(line.find("#") != -1)
+        {
+            line = line.substr(0,line.find("#"));
+        }
+        if(line.find("//") != -1)
+        {
+            line = line.substr(0,line.find("//"));
+        }
+        if(line.find(paramName) != -1)
         {
             if(row != -1)
             {
@@ -225,7 +235,15 @@ void Config::readParameter()
     std::vector<std::string> textList = _textList;
     for(unsigned int a=0; a<textList.size(); a++)
     {
-        if(textList[a].find("#") == -1 && textList[a].find("//") == -1 && textList[a] != "")
+        if(textList[a].find("#") != -1)
+        {
+            textList[a] = textList[a].substr(0,textList[a].find("#"));
+        }
+        if(textList[a].find("//") != -1)
+        {
+            textList[a] = textList[a].substr(0,textList[a].find("//"));
+        }
+        if(textList[a] != "")
         {
             while(textList[a].find(" ") == 0 || textList[a].find("\t") == 0)
             {
