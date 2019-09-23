@@ -1,8 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 //              Autor   Alex Krieg
-#define  CONFIG_VERSION "00.00.00"
-//              Datum   07.10.2018
+#define  CONFIG_VERSION "00.00.01"
+//              Datum   23.09.2019
+
 
 #include "config_global.h"
 #include <stdlib.h>
@@ -10,6 +11,8 @@
 #include <vector>
 #include <iostream>
 #include <QDebug>
+
+#define CONFIG_DEFAULT_COMMENT_PREFIX "//"
 
 class CONFIGSHARED_EXPORT Config
 {
@@ -39,6 +42,12 @@ class CONFIGSHARED_EXPORT Config
 
         void deleteMultipleParameter(bool doDelete);
         bool deleteMultipleParameter();
+
+        void resetCommentPrefixList();
+        void addCommentPrefix(std::string prefix);
+        void deleteCommentPrefix(std::string prefix);
+        void commentPrefixList(std::vector<std::string> prefixList);
+        std::vector<std::string>    commentPrefixList();
     private:
         int getParamRow(std::string paramName);
         void readParameter();
@@ -50,6 +59,7 @@ class CONFIGSHARED_EXPORT Config
         std::vector<std::string> _parameterNameList;
         std::vector<std::string> _parameterList;
         std::vector<std::string> _textList;
+        std::vector<std::string> _commentPrefixList;
         bool    _deleteMultipleParameter;
         bool    _update;
 

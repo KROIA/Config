@@ -9,6 +9,7 @@ Config::Config(std::string filename)
     this->filename(filename);
     _deleteMultipleParameter = false;
     _update                  = true;
+    this->resetCommentPrefixList();
 }
 Config::~Config()
 {
@@ -55,7 +56,20 @@ void Config::read()
             }
             if(readFileHead)
             {
-                if(buf.find("//") != -1 || buf.find("#") != -1)
+                for(unsigned int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
+                {
+                    if(buf.find(_commentPrefixList[commandPrefix]) != -1)
+                    {
+                        buf = buf.substr(0,buf.find(_commentPrefixList[commandPrefix]));
+                        _fileHead.push_back(buf);
+                        break;
+                    }
+                    else
+                    {
+                        readFileHead = false;
+                    }
+                }
+                /*if(buf.find("//") != -1 || buf.find("#") != -1)
                 {
                     if(buf.find("//") == 0){buf= buf.substr(2);}else
                     if(buf.find("#") == 0){buf= buf.substr(1);}
@@ -65,7 +79,7 @@ void Config::read()
                 }else
                 {
                     readFileHead = false;
-                }
+                }*/
             }
             _textList.push_back(buf);
         }
@@ -93,7 +107,7 @@ void Config::save()
     {
         for(unsigned int a=0; a<_fileHead.size(); a++)
         {
-            fprintf(_file,"#%s\n",_fileHead[a].c_str());
+            fprintf(_file,"%s%s\n",_commentPrefixList[0].c_str(),_fileHead[a].c_str());
         }
         for(unsigned int a=0; a<_textList.size(); a++)
         {
@@ -203,20 +217,65 @@ bool Config::deleteMultipleParameter()
 {
     return _deleteMultipleParameter;
 }
+void Config::resetCommentPrefixList()
+{
+    _commentPrefixList.clear();
+    this->addCommentPrefix(CONFIG_DEFAULT_COMMENT_PREFIX);
+}
+void Config::addCommentPrefix(std::string prefix)
+{
+    for(unsigned int a=0; a<_commentPrefixList.size(); a++)
+    {
+        if(_commentPrefixList[a] == prefix)
+        {
+            return;
+        }
+    }
+    _commentPrefixList.push_back(prefix);
+}
+void Config::deleteCommentPrefix(std::string prefix)
+{
+    if(prefix == CONFIG_DEFAULT_COMMENT_PREFIX)
+        return;
+    for(unsigned int a=0; a<_commentPrefixList.size(); a++)
+    {
+        if(_commentPrefixList[a] == prefix)
+        {
+            _commentPrefixList.erase(_commentPrefixList.begin()+a);
+            return;
+        }
+    }
+}
+void Config::commentPrefixList(std::vector<std::string> prefixList)
+{
+    _commentPrefixList = prefixList;
+}
+std::vector<std::string>    Config::commentPrefixList()
+{
+    return _commentPrefixList;
+}
+
 int Config::getParamRow(std::string paramName)
 {
     int row = -1;
     for(unsigned int a=0; a<_textList.size(); a++)
     {
         std::string line = _textList[a];
-        if(line.find("#") != -1)
+        for(unsigned int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
+        {
+            if(line.find(_commentPrefixList[commandPrefix]) != -1)
+            {
+                line = line.substr(0,line.find(_commentPrefixList[commandPrefix]));
+            }
+        }
+        /*if(line.find("#") != -1)
         {
             line = line.substr(0,line.find("#"));
         }
         if(line.find("//") != -1)
         {
             line = line.substr(0,line.find("//"));
-        }
+        }*/
         if(line.find(paramName) != -1)
         {
             if(row != -1)
@@ -235,14 +294,21 @@ void Config::readParameter()
     std::vector<std::string> textList = _textList;
     for(unsigned int a=0; a<textList.size(); a++)
     {
-        if(textList[a].find("#") != -1)
+        for(unsigned int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
+        {
+            if(textList[a].find(_commentPrefixList[commandPrefix]) != -1)
+            {
+                textList[a] = textList[a].substr(0,textList[a].find(_commentPrefixList[commandPrefix]));
+            }
+        }
+        /*if(textList[a].find("#") != -1)
         {
             textList[a] = textList[a].substr(0,textList[a].find("#"));
         }
         if(textList[a].find("//") != -1)
         {
             textList[a] = textList[a].substr(0,textList[a].find("//"));
-        }
+        }*/
         if(textList[a] != "")
         {
             while(textList[a].find(" ") == 0 || textList[a].find("\t") == 0)
@@ -319,7 +385,7 @@ void Config::writeText()
                     }
                     else
                     {
-                        _textList[b] = "#multiple_param: "+_textList[b];
+                        _textList[b] = _commentPrefixList[0]+"multiple_param: "+_textList[b];
                     //    printf("2\t b: %i\ttext: %s\n",b,_textList[b].c_str());
                     }
                 }
