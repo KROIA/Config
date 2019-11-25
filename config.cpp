@@ -247,6 +247,12 @@ void Config::parameterDouble(QString parameterName, double &parameter, QString m
     this->parameter(parameterName,tmp,mode);
     parameter = tmp.toDouble();
 }
+void Config::parameterFloat(QString parameterName, float &parameter, QString mode)
+{
+    QString tmp = QString::number((double)parameter);
+    this->parameter(parameterName,tmp,mode);
+    parameter = tmp.toFloat();
+}
 void Config::parameterBool(QString parameterName, bool &parameter, QString mode)
 {
     QString tmp = "false";

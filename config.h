@@ -1,8 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #define  CONFIG_AUTOR   "Alex Krieg (KRIA)"
-#define  CONFIG_VERSION "00.01.02"
-//              Datum   19.11.2019
+#define  CONFIG_VERSION "00.01.03"
+//              Datum   25.11.2019
 
 
 #include "config_global.h"
@@ -43,6 +43,7 @@ class CONFIGSHARED_EXPORT Config
         void parameterInt(QString parameterName, int &parameter, QString mode);
         void parameterUInt(QString parameterName, unsigned int &parameter, QString mode);
         void parameterDouble(QString parameterName, double &parameter, QString mode);
+        void parameterFloat(QString parameterName, float &parameter, QString mode);
         void parameterBool(QString parameterName, bool &parameter, QString mode);
         QString line(int line);
         QStringList text();
