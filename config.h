@@ -1,8 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
-//              Autor   Alex Krieg
-#define  CONFIG_VERSION "00.00.01"
-//              Datum   23.09.2019
+#define  CONFIG_AUTOR   "Alex Krieg (KRIA)"
+#define  CONFIG_VERSION "00.01.02"
+//              Datum   19.11.2019
 
 
 #include "config_global.h"
@@ -11,6 +11,9 @@
 #include <vector>
 #include <iostream>
 #include <QDebug>
+#include <QFile>
+#include <QString>
+
 
 #define CONFIG_DEFAULT_COMMENT_PREFIX "//"
 
@@ -18,48 +21,56 @@ class CONFIGSHARED_EXPORT Config
 {
     public:
         Config();
-        Config(std::string filename);
+        Config(QString filename);
         ~Config();
+        static const QString version();
+        static const QString autor();
 
-        void filename(std::string filename);
-        std::string filename();
+        void filename(QString filename);
+        QString filename();
 
         void read();
         void save();
 
-        void fileHead(std::vector<std::string> head);
-        std::vector<std::string> fileHead();
+        void fileHead(QStringList head);
+        QStringList fileHead();
 
-        void parameter(std::string parameterName, std::string parameter);
-        void parameter(std::string parameterName, std::string &parameter);
-        void parameter(std::string parameterName, std::string &parameter, std::string mode);
-        std::string line(unsigned int line);
-        std::vector<std::string> text();
+        void parameter(QString parameterName, QString parameter);
+        void parameter(QString parameterName, QString &parameter);
+        void parameter(QString parameterName, QString &parameter, QString mode);
+        void parameterShort(QString parameterName, short &parameter, QString mode);
+        void parameterUShort(QString parameterName, unsigned short &parameter, QString mode);
+        void parameterInt(QString parameterName, int &parameter, QString mode);
+        void parameterUInt(QString parameterName, unsigned int &parameter, QString mode);
+        void parameterDouble(QString parameterName, double &parameter, QString mode);
+        void parameterBool(QString parameterName, bool &parameter, QString mode);
+        QString line(int line);
+        QStringList text();
 
-        std::vector<std::string>    parameterList();
-        std::vector<std::string>    parameterValue();
-        unsigned int parameters();
+        QStringList    parameterList();
+        QStringList    parameterValue();
+        int parameters();
 
         void deleteMultipleParameter(bool doDelete);
         bool deleteMultipleParameter();
 
         void resetCommentPrefixList();
-        void addCommentPrefix(std::string prefix);
-        void deleteCommentPrefix(std::string prefix);
-        void commentPrefixList(std::vector<std::string> prefixList);
-        std::vector<std::string>    commentPrefixList();
+        void addCommentPrefix(QString prefix);
+        void deleteCommentPrefix(QString prefix);
+        void commentPrefixList(QStringList prefixList);
+        QStringList    commentPrefixList();
     private:
-        int getParamRow(std::string paramName);
+        int getParamRow(QString paramName);
         void readParameter();
         void writeText();
-        int parameterindex(std::string parameterName);
+        int parameterindex(QString parameterName);
 
-        std::string _filename;
-        std::vector<std::string> _fileHead;
-        std::vector<std::string> _parameterNameList;
-        std::vector<std::string> _parameterList;
-        std::vector<std::string> _textList;
-        std::vector<std::string> _commentPrefixList;
+        QString _filename;
+        QStringList _fileHead;
+        QStringList _parameterNameList;
+        QStringList _parameterList;
+        QStringList _textList;
+        QStringList _commentPrefixList;
         bool    _deleteMultipleParameter;
         bool    _update;
 

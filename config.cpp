@@ -4,7 +4,7 @@ Config::Config()
 {
     Config("");
 }
-Config::Config(std::string filename)
+Config::Config(QString filename)
 {
     this->filename(filename);
     _deleteMultipleParameter = false;
@@ -16,77 +16,69 @@ Config::~Config()
 
 }
 
-void Config::filename(std::string filename)
+const QString Config::version()
+{
+    return QString(CONFIG_VERSION);
+}
+const QString Config::autor()
+{
+    return QString(CONFIG_AUTOR);
+}
+
+void Config::filename(QString filename)
 {
     _filename = filename;
 }
-std::string Config::filename()
+QString Config::filename()
 {
     return _filename;
 }
 
 void Config::read()
-{
-    _textList = std::vector<std::string>();
-    _fileHead = std::vector<std::string>();
-    _file = fopen(_filename.c_str(),"r");
-    if(!_file)
+{    
+    _textList.clear();
+    _fileHead.clear();
+
+    QFile file(_filename);
+    bool readFileHead = true;
+
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        //throw std::string("Config::read() Unknown file \""+_filename+"\"");
-        qDebug() << "Config::read() Unknown file \""<<QString::fromStdString(_filename)<<"\"";
+        qDebug() << "Config::read() Can't open file \""<<_filename<<"\"";
+        return;
     }
-    else
-    {
-        char inBuff[255];
-        bool readFileHead = true;
-        while(!feof(_file))
+    QTextStream stream(&file);
+    QString line;
+    while (stream.readLineInto(&line)) {
+
+        while(line.indexOf(" ") == 0 || line.indexOf("\t") == 0)
         {
-           for(int a=0; a<255; a++)
-           {inBuff[a] = NULL;}
-            fgets(inBuff,255,_file);
-            std::string buf = inBuff;
-
-            while(buf.find(" ") == 0 || buf.find("\t") == 0)
+            line = line.mid(1);
+        }
+        if(line.indexOf("\n") != -1)
+        {
+            line = line.mid(0,line.indexOf("\n"));
+        }
+        if(readFileHead)
+        {
+            for(int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
             {
-                buf = buf.substr(1);
-            }
-            if(buf.find("\n") != -1)
-            {
-                buf = buf.substr(0,buf.find("\n"));
-            }
-            if(readFileHead)
-            {
-                for(unsigned int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
+                if(line.indexOf(_commentPrefixList[commandPrefix]) != -1)
                 {
-                    if(buf.find(_commentPrefixList[commandPrefix]) != -1)
-                    {
-                        buf = buf.substr(0,buf.find(_commentPrefixList[commandPrefix]));
-                        _fileHead.push_back(buf);
-                        break;
-                    }
-                    else
-                    {
-                        readFileHead = false;
-                    }
+                    line = line.mid(0,line.indexOf(_commentPrefixList[commandPrefix]));
+                    _fileHead.push_back(line);
+                    break;
                 }
-                /*if(buf.find("//") != -1 || buf.find("#") != -1)
-                {
-                    if(buf.find("//") == 0){buf= buf.substr(2);}else
-                    if(buf.find("#") == 0){buf= buf.substr(1);}
-
-                    _fileHead.push_back(buf);
-                    continue;
-                }else
+                else
                 {
                     readFileHead = false;
-                }*/
+                }
             }
-            _textList.push_back(buf);
         }
-        fclose(_file);
-
-        readParameter();
+        _textList.push_back(line);
     }
+    file.close();
+    readParameter();
 }
 void Config::save()
 {
@@ -98,6 +90,50 @@ void Config::save()
     {
         return;
     }
+
+    QFile file(_filename);
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        qDebug() << "Config::save() Can't open file \""<<_filename<<"\"";
+        return;
+    }
+    for(int line=0; line<_fileHead.size(); line++)
+    {
+        /*
+            Nur eine neue Zeile wenn nicht schon eine da ist und
+            es nicht die letzte Zeile ist.
+         */
+        if(line == _fileHead.size()-1 || _fileHead[line].indexOf("\n") != -1)
+        {
+            continue;
+        }
+        _fileHead[line]+= "\n";
+    }
+    for(int line=0; line<_textList.size(); line++)
+    {
+        /*
+            Nur eine neue Zeile wenn nicht schon eine da ist und
+            es nicht die letzte Zeile ist.
+         */
+        if(line == _textList.size()-1 || _textList[line].indexOf("\n") != -1)
+        {
+            continue;
+        }
+        _textList[line]+= "\n";
+    }
+    for(int a=0; a<_fileHead.size(); a++)
+    {
+        //fprintf(_file,"%s%s\n",_commentPrefixList[0].c_str(),_fileHead[a].c_str());
+        file.write((_commentPrefixList[0]+_fileHead[a]).toStdString().c_str());
+    }
+    for(int a=0; a<_textList.size(); a++)
+    {
+        //fprintf(_file,"%s",_textList[a].c_str());
+        file.write(_textList[a].toStdString().c_str());
+    }
+    file.close();
+    /*
+
     _file = fopen(_filename.c_str(),"w");
     if(!_file)
     {
@@ -118,17 +154,17 @@ void Config::save()
             }
         }
         fclose(_file);
-    }
+    }*/
 }
-void Config::fileHead(std::vector<std::string> head)
+void Config::fileHead(QStringList head)
 {
     _fileHead = head;
 }
-std::vector<std::string> Config::fileHead()
+QStringList Config::fileHead()
 {
     return _fileHead;
 }
-void Config::parameter(std::string parameterName, std::string parameter)
+void Config::parameter(QString parameterName, QString parameter)
 {
     int paramIndex = parameterindex(parameterName);
     if(paramIndex != -1)
@@ -144,20 +180,22 @@ void Config::parameter(std::string parameterName, std::string parameter)
     }
    // writeText();
 }
-void Config::parameter(std::string parameterName, std::string &parameter)
+void Config::parameter(QString parameterName, QString &parameter)
 {
     this->parameter(parameterName,parameter,"r");
 }
-void Config::parameter(std::string parameterName, std::string &parameter, std::string mode)
+void Config::parameter(QString parameterName, QString &parameter, QString mode)
 {
     if(mode != "r" || mode != "w" || mode != "rw" || mode != "wr")
     {
      //   throw std::runtime_error("Config::parameter("+parameterName+","+parameter+","+mode+") Error: unknown mode: "+mode+" Correct modes are: \"r\" , \"w\" , \"rw\" , \"wr\"");
     }
+
     int paramIndex = parameterindex(parameterName);
+   // std::cout <<"name "<<parameterName.toStdString() << " "<<paramIndex<<"\n";
     if(paramIndex != -1)
     {
-        if(mode.find("r") != -1)
+        if(mode.indexOf("r") != -1)
         {
             parameter = _parameterList[paramIndex];
         }
@@ -169,7 +207,8 @@ void Config::parameter(std::string parameterName, std::string &parameter, std::s
     }
     else
     {
-        if(mode.find("w") != -1)
+        //std::cout <<"cant find "<<parameterName.toStdString() << "\n";
+        if(mode.indexOf("w") != -1)
         {
             _parameterNameList.push_back(parameterName);
             _parameterList.push_back(parameter);
@@ -178,10 +217,54 @@ void Config::parameter(std::string parameterName, std::string &parameter, std::s
     }
     //writeText();
 }
-std::string Config::line(unsigned int line)
+void Config::parameterShort(QString parameterName, short &parameter, QString mode)
 {
-    if(_textList.size() <= line)
+    QString tmp = QString::number(parameter);
+    this->parameter(parameterName,tmp,mode);
+    parameter = tmp.toShort();
+}
+void Config::parameterUShort(QString parameterName, unsigned short &parameter, QString mode)
+{
+    QString tmp = QString::number(parameter);
+    this->parameter(parameterName,tmp,mode);
+    parameter = tmp.toUShort();
+}
+void Config::parameterInt(QString parameterName, int &parameter, QString mode)
+{
+    QString tmp = QString::number(parameter);
+    this->parameter(parameterName,tmp,mode);
+    parameter = tmp.toInt();
+}
+void Config::parameterUInt(QString parameterName, unsigned int &parameter, QString mode)
+{
+    QString tmp = QString::number(parameter);
+    this->parameter(parameterName,tmp,mode);
+    parameter = tmp.toUInt();
+}
+void Config::parameterDouble(QString parameterName, double &parameter, QString mode)
+{
+    QString tmp = QString::number(parameter);
+    this->parameter(parameterName,tmp,mode);
+    parameter = tmp.toDouble();
+}
+void Config::parameterBool(QString parameterName, bool &parameter, QString mode)
+{
+    QString tmp = "false";
+    if(parameter)
+        tmp = "true";
+    this->parameter(parameterName,tmp,mode);
+
+    if(tmp.indexOf("true") != -1 || tmp.indexOf("TRUE") != -1 || tmp == "1")
+        parameter = true;
+    else
+        parameter = false;
+}
+QString Config::line(int line)
+{
+    if(_textList.size() <= line || line < 0)
     {
+        qDebug() << "Config::line(int ["<<line<<"]) paramerer 0 out of boundry: min: 0 max:"<<_textList.size()-1;
+        return "";
        // throw std::runtime_error("Config::line("+std::to_string(line)+") parameter 0 is out of range! command ignored. Maximum is "+std::to_string(_textList.size()-1));
     }
     else
@@ -189,19 +272,19 @@ std::string Config::line(unsigned int line)
         return _textList[line];
     }
 }
-std::vector<std::string>    Config::parameterList()
+QStringList    Config::parameterList()
 {
     return _parameterNameList;
 }
-std::vector<std::string>    Config::parameterValue()
+QStringList    Config::parameterValue()
 {
     return _parameterList;
 }
-unsigned int Config::parameters()
+int Config::parameters()
 {
     return _parameterNameList.size();
 }
-std::vector<std::string> Config::text()
+QStringList Config::text()
 {
     if(_update)
     {
@@ -222,9 +305,9 @@ void Config::resetCommentPrefixList()
     _commentPrefixList.clear();
     this->addCommentPrefix(CONFIG_DEFAULT_COMMENT_PREFIX);
 }
-void Config::addCommentPrefix(std::string prefix)
+void Config::addCommentPrefix(QString prefix)
 {
-    for(unsigned int a=0; a<_commentPrefixList.size(); a++)
+    for(int a=0; a<_commentPrefixList.size(); a++)
     {
         if(_commentPrefixList[a] == prefix)
         {
@@ -233,11 +316,11 @@ void Config::addCommentPrefix(std::string prefix)
     }
     _commentPrefixList.push_back(prefix);
 }
-void Config::deleteCommentPrefix(std::string prefix)
+void Config::deleteCommentPrefix(QString prefix)
 {
     if(prefix == CONFIG_DEFAULT_COMMENT_PREFIX)
         return;
-    for(unsigned int a=0; a<_commentPrefixList.size(); a++)
+    for(int a=0; a<_commentPrefixList.size(); a++)
     {
         if(_commentPrefixList[a] == prefix)
         {
@@ -246,41 +329,33 @@ void Config::deleteCommentPrefix(std::string prefix)
         }
     }
 }
-void Config::commentPrefixList(std::vector<std::string> prefixList)
+void Config::commentPrefixList(QStringList prefixList)
 {
     _commentPrefixList = prefixList;
 }
-std::vector<std::string>    Config::commentPrefixList()
+QStringList    Config::commentPrefixList()
 {
     return _commentPrefixList;
 }
 
-int Config::getParamRow(std::string paramName)
+int Config::getParamRow(QString paramName)
 {
     int row = -1;
-    for(unsigned int a=0; a<_textList.size(); a++)
+    for(int a=0; a<_textList.size(); a++)
     {
-        std::string line = _textList[a];
-        for(unsigned int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
+        QString line = _textList[a];
+        for(int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
         {
-            if(line.find(_commentPrefixList[commandPrefix]) != -1)
+            if(line.indexOf(_commentPrefixList[commandPrefix]) != -1)
             {
-                line = line.substr(0,line.find(_commentPrefixList[commandPrefix]));
+                line = line.mid(0,line.indexOf(_commentPrefixList[commandPrefix]));
             }
         }
-        /*if(line.find("#") != -1)
-        {
-            line = line.substr(0,line.find("#"));
-        }
-        if(line.find("//") != -1)
-        {
-            line = line.substr(0,line.find("//"));
-        }*/
-        if(line.find(paramName) != -1)
+        if(line.indexOf(paramName) != -1)
         {
             if(row != -1)
             {
-               //   printf("file: %s multiple parameter: %s",_filename.c_str(),paramName.c_str());
+                qDebug() <<"file: "<<_filename<<" multiple parameter: "<<paramName;
                 row = -2;
                 return row;
             }
@@ -291,51 +366,39 @@ int Config::getParamRow(std::string paramName)
 }
 void Config::readParameter()
 {
-    std::vector<std::string> textList = _textList;
-    for(unsigned int a=0; a<textList.size(); a++)
+    QStringList textList = _textList;
+    for(int a=0; a<textList.size(); a++)
     {
-        for(unsigned int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
+        for(int commandPrefix=0; commandPrefix<_commentPrefixList.size(); commandPrefix++)
         {
-            if(textList[a].find(_commentPrefixList[commandPrefix]) != -1)
+            if(textList[a].indexOf(_commentPrefixList[commandPrefix]) != -1)
             {
-                textList[a] = textList[a].substr(0,textList[a].find(_commentPrefixList[commandPrefix]));
+                textList[a] = textList[a].mid(0,textList[a].indexOf(_commentPrefixList[commandPrefix]));
             }
         }
-        /*if(textList[a].find("#") != -1)
-        {
-            textList[a] = textList[a].substr(0,textList[a].find("#"));
-        }
-        if(textList[a].find("//") != -1)
-        {
-            textList[a] = textList[a].substr(0,textList[a].find("//"));
-        }*/
         if(textList[a] != "")
         {
-            while(textList[a].find(" ") == 0 || textList[a].find("\t") == 0)
+            textList[a].replace("\t"," ");
+            while(textList[a].indexOf(" ") == 0)
             {
-                textList[a] = textList[a].substr(1);
+                textList[a] = textList[a].mid(1);
             }
-            std::string parameterName = "";
-            std::string parameter = "";
-            if(textList[a].find(" ") != -1 || textList[a].find("\t") != -1)
+            QString parameterName = "";
+            QString parameter = "";
+            if(textList[a].indexOf(" ") != -1)
             {
               //  parameterName = textList[a].substr(0,textList[a].find("\t"));
 
-                if(textList[a].find(" ") < textList[a].find("\t") && textList[a].find(" ") != -1)
+                if(textList[a].indexOf(" ") != -1)
                 {
-                    parameterName = textList[a].substr(0,textList[a].find(" "));
-                    textList[a] = textList[a].substr(textList[a].find(" "));
+                    parameterName = textList[a].mid(0,textList[a].indexOf(" "));
+                    textList[a] = textList[a].mid(textList[a].indexOf(" "));
                 }
-                else
+                while(textList[a].indexOf(" ") == 0)
                 {
-                    parameterName = textList[a].substr(0,textList[a].find("\t"));
-                    textList[a] = textList[a].substr(textList[a].find("\t"));
+                    textList[a] = textList[a].mid(1);
                 }
-                while(textList[a].find(" ") == 0 || textList[a].find("\t") == 0)
-                {
-                    textList[a] = textList[a].substr(1);
-                }
-                parameter = textList[a].substr(0,textList[a].find("\n"));
+                parameter = textList[a].mid(0,textList[a].indexOf("\n"));
 
             }
             else
@@ -343,7 +406,7 @@ void Config::readParameter()
                 parameterName = textList[a];
             }
             bool save = true;
-            for(unsigned int b=0; b<_parameterNameList.size(); b++)
+            for(int b=0; b<_parameterNameList.size(); b++)
             {
                 if(_parameterNameList[b] == parameterName)
                 {
@@ -360,25 +423,19 @@ void Config::readParameter()
 }
 void Config::writeText()
 {
-    for(unsigned int a=0; a<_parameterNameList.size(); a++)
+    for(int a=0; a<_parameterNameList.size(); a++)
     {
-
         int row = getParamRow(_parameterNameList[a]);
-       // printf("row: %i a: %i %s\t%s\n",row,a,_parameterNameList[a].c_str(),_parameterList[a].c_str());
         if(row > -1)
         {
             _textList[row] = _parameterNameList[a] + "\t" + _parameterList[a];
         }
         else if(row == -2)
         {
-         //   printf("0\n");
-            for(unsigned int b=0; b<_textList.size(); b++)
+            for(int b=0; b<_textList.size(); b++)
             {
-               // printf("1\n");
-                if(_textList[b].find(_parameterNameList[a]) == 0)
+                if(_textList[b].indexOf(_parameterNameList[a]) == 0)
                 {
-
-
                     if(_deleteMultipleParameter == true)
                     {
                         _textList.erase(_textList.begin()+b);
@@ -386,7 +443,6 @@ void Config::writeText()
                     else
                     {
                         _textList[b] = _commentPrefixList[0]+"multiple_param: "+_textList[b];
-                    //    printf("2\t b: %i\ttext: %s\n",b,_textList[b].c_str());
                     }
                 }
             }
@@ -394,19 +450,24 @@ void Config::writeText()
         }else
         {
             _textList.push_back(_parameterNameList[a]+"\t"+_parameterList[a]);
-            //printf("push_back: %s\n",_textList[_textList.size()-1].c_str());
         }
     }
     _update = false;
 }
-int Config::parameterindex(std::string parameterName)
+int Config::parameterindex(QString parameterName)
 {
-    for(unsigned int a=0; a<_parameterNameList.size(); a++)
+    for(int a=0; a<_parameterNameList.size(); a++)
     {
         if(_parameterNameList[a] == parameterName)
         {
             return a;
         }
     }
+    /*std::cout <<"Parameterlist\n";
+    for(int a=0; a<_parameterNameList.size(); a++)
+    {
+        std::cout<<_parameterNameList[a].toStdString()<<"\n";
+    }
+    getchar();*/
     return -1;
 }
