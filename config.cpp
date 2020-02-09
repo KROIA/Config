@@ -44,7 +44,7 @@ void Config::read()
 
     if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        qDebug() << "Config::read() Can't open file \""<<_filename<<"\"";
+        //qDebug() << "Config::read() Can't open file \""<<_filename<<"\"";
         return;
     }
     QTextStream stream(&file);
@@ -94,7 +94,7 @@ void Config::save()
     QFile file(_filename);
     if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        qDebug() << "Config::save() Can't open file \""<<_filename<<"\"";
+        //qDebug() << "Config::save() Can't open file \""<<_filename<<"\"";
         return;
     }
     for(int line=0; line<_fileHead.size(); line++)
@@ -269,7 +269,7 @@ QString Config::line(int line)
 {
     if(_textList.size() <= line || line < 0)
     {
-        qDebug() << "Config::line(int ["<<line<<"]) paramerer 0 out of boundry: min: 0 max:"<<_textList.size()-1;
+        //qDebug() << "Config::line(int ["<<line<<"]) paramerer 0 out of boundry: min: 0 max:"<<_textList.size()-1;
         return "";
        // throw std::runtime_error("Config::line("+std::to_string(line)+") parameter 0 is out of range! command ignored. Maximum is "+std::to_string(_textList.size()-1));
     }
@@ -361,7 +361,7 @@ int Config::getParamRow(QString paramName)
         {
             if(row != -1)
             {
-                qDebug() <<"file: "<<_filename<<" multiple parameter: "<<paramName;
+                //qDebug() <<"file: "<<_filename<<" multiple parameter: "<<paramName;
                 row = -2;
                 return row;
             }
@@ -395,11 +395,8 @@ void Config::readParameter()
             {
               //  parameterName = textList[a].substr(0,textList[a].find("\t"));
 
-                if(textList[a].indexOf(" ") != -1)
-                {
-                    parameterName = textList[a].mid(0,textList[a].indexOf(" "));
-                    textList[a] = textList[a].mid(textList[a].indexOf(" "));
-                }
+                parameterName = textList[a].mid(0,textList[a].indexOf(" "));
+                textList[a] = textList[a].mid(textList[a].indexOf(" "));
                 while(textList[a].indexOf(" ") == 0)
                 {
                     textList[a] = textList[a].mid(1);
@@ -423,6 +420,9 @@ void Config::readParameter()
             {
                 _parameterNameList.push_back(parameterName);
                 _parameterList.push_back(parameter);
+
+           //     //qDebug() << "name:" << "  " << parameterName;
+           //     //qDebug() << "param:" << "  " << parameter;
             }
         }
     }
